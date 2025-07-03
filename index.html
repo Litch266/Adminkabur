@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>awes ada tukang bakso di depan rumah wkwka</title>
+  <style>
+    :root {
+      --hud: #161d1d80;
+      --hud-border: #7fffd450;
+      --accent: #00d46e;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+      background: none;
+    }
+
+    #gameArea {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: url('img/soldiers.jpg') center/cover no-repeat;
+    }
+
+    #character {
+      position: absolute;
+      width: 72px;
+      filter: drop-shadow(0 0 3px #000);
+      user-select: none;
+    }
+
+    #nameTag {
+      position: absolute;
+      color: white;
+      font-weight: bold;
+      text-shadow: 1px 1px 3px black;
+      pointer-events: none;
+      transform: translateX(-50%);
+    }
+
+    #coin {
+      position: absolute;
+      width: 60px;
+      animation: pulse 1s infinite alternate;
+      filter: drop-shadow(0 0 4px var(--accent));
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to   { transform: scale(1.2); }
+    }
+
+    #scoreBox {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: var(--hud);
+      color: white;
+      padding: 10px 20px;
+      border: 2px solid var(--hud-border);
+      border-radius: 12px;
+      font-weight: bold;
+      backdrop-filter: blur(6px);
+    }
+
+    #storeBtn {
+      position: absolute;
+      right: 20px;
+      bottom: 30px;
+      background: #00d46e;
+      color: white;
+      font-weight: bold;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 0 10px #000a;
+    }
+
+    .pad {
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      background: var(--hud);
+      color: white;
+      border: 2px solid var(--hud-border);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      font-weight: bold;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 0 8px #000a inset;
+      user-select: none;
+    }
+
+    .pad:active {
+      background: #ffffff33;
+    }
+
+    #pad-up    { left: 90px;  bottom: 160px; }
+    #pad-left  { left: 26px;  bottom: 94px;  }
+    #pad-down  { left: 90px;  bottom: 30px;  }
+    #pad-right { left: 154px; bottom: 94px;  }
+
+    .item {
+      width: auto;
+      height: 44px;
+      margin: 4px;
+      border-radius: 6px;
+      box-shadow: 0 0 4px #0008;
+    }
+
+    #assetZone {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: #000000cc;
+      color: white;
+      padding: 10px;
+      border-radius: 12px;
+      border: 2px solid var(--hud-border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      max-width: 300px;
+      gap: 5px;
+    }
+
+    #charSelector {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    #charSelector h2 {
+      margin-bottom: 16px;
+    }
+
+    .charChoice {
+      width: 70px;
+      height: auto;
+      margin: 10px;
+      cursor: pointer;
+      border: 3px solid transparent;
+    }
+
+    .charChoice:hover {
+      border: 3px solid var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<div id="gameArea">
+  <div id="charSelector">
+    <h2>🗣️ Pilih Karakter</h2>
+    <div>
+      <img src="img/1.jpg" class="charChoice" onclick="selectChar('img/1.jpg', 1)">
+      <img src="img/2.jpg" class="charChoice" onclick="selectChar('img/2.jpg', 2)">
+      <img src="img/3.jpg" class="charChoice" onclick="selectChar('img/3.jpg', 3)">
+    </div>
+  </div>
+
+  <img id="character" src="" alt="karakter">
+  <div id="nameTag">KORUPTOR</div>
+  <img id="coin" src="img/uang.jpg" alt="uang">
+  <div id="scoreBox">Rp <span id="score">0</span></div>
+  <div id="assetZone">Zona Aset Korupsi:</div>
+  <button id="storeBtn">🛒 Store</button>
+
+  <!-- D-pad -->
+  <div id="pad-up" class="pad">▲</div>
+  <div id="pad-left" class="pad">◀</div>
+  <div id="pad-down" class="pad">▼</div>
+  <div id="pad-right" class="pad">▶</div>
+</div>
+
+<!-- Suara -->
+<audio id="suaraUang" src="suara/hidup uang rakyat.mp3"></audio>
+<audio id="suaraBeli" src="suara/inii baru hidup maka.mp3"></audio>
+<audio id="suaraBG" src="suara/latar.mp3" autoplay loop></audio>
+<audio id="vn1" src="suara/inii baru hidup maka.mp3"></audio>
+<audio id="vn2" src="suara/hidup uang rakyat.mp3"></audio>
+
+<script>
+  // Musik background aktif saat klik pertama
+  document.body.addEventListener('click', () => {
+    const bg = document.getElementById('suaraBG');
+    if (bg.paused) bg.play();
+  }, { once: true });
+
+  const char = document.getElementById("character");
+  const tag  = document.getElementById("nameTag");
+  const coin = document.getElementById("coin");
+  const scoreTxt = document.getElementById("score");
+  const suaraUang = document.getElementById("suaraUang");
+  const suaraBeli = document.getElementById("suaraBeli");
+  const assetZone = document.getElementById("assetZone");
+  const vn1 = document.getElementById("vn1");
+  const vn2 = document.getElementById("vn2");
+
+  const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+  let x = innerWidth / 2 - 48, y = innerHeight / 2 - 48, score = 0, speed = 4;
+
+  function placeCoin() {
+    coin.style.left = Math.random() * (innerWidth - 60) + "px";
+    coin.style.top  = Math.random() * (innerHeight - 60) + "px";
+  }
+
+  function addAsset(img) {
+    const el = document.createElement("img");
+    el.src = img;
+    el.className = "item";
+    assetZone.appendChild(el);
+  }
+
+  function loop() {
+    if(keys.ArrowUp) y -= speed;
+    if(keys.ArrowDown) y += speed;
+    if(keys.ArrowLeft) x -= speed;
+    if(keys.ArrowRight) x += speed;
+
+    x = Math.max(0, Math.min(x, innerWidth - char.offsetWidth));
+    y = Math.max(0, Math.min(y, innerHeight - char.offsetHeight));
+
+    char.style.left = x + "px";
+    char.style.top  = y + "px";
+    tag.style.left = (x + char.offsetWidth/2) + "px";
+    tag.style.top  = (y + char.offsetHeight + 5) + "px";
+
+    if (collided(char, coin)) {
+      score += 100000;
+      suaraUang.play();
+      scoreTxt.textContent = score.toLocaleString("id-ID");
+      placeCoin();
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  function collided(a,b){
+    const r1 = a.getBoundingClientRect(), r2 = b.getBoundingClientRect();
+    return !(r1.right<r2.left||r1.left>r2.right||r1.bottom<r2.top||r1.top>r2.bottom);
+  }
+
+  onkeydown = e => { if(keys[e.key] !== undefined) keys[e.key] = true; };
+  onkeyup   = e => { if(keys[e.key] !== undefined) keys[e.key] = false; };
+
+  [["pad-up", "ArrowUp"], ["pad-down", "ArrowDown"], ["pad-left", "ArrowLeft"], ["pad-right", "ArrowRight"]]
+  .forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    el.ontouchstart = e => { e.preventDefault(); keys[key] = true; };
+    el.ontouchend   = () => keys[key] = false;
+  });
+
+  document.getElementById("storeBtn").onclick = () => {
+    const pilih = prompt("🛒 Pilih Aset:\n1. Rumah 1jt\n2. Mobil 750rb\n3. Jet 2jt\n4. Vila Bali 2.5jt\n5. Vila Lembang 1.5jt\n6. Cuci Uang 500rb");
+    if (!pilih) return;
+
+    const harga = {
+      1: [1000000, "img/rumah.jpg"],
+      2: [750000, "img/mobil.jpg"],
+      3: [2000000, "img/jet.jpg"],
+      4: [2500000, "img/vilabali.jpg"],
+      5: [1500000, "img/vilalembang.jpg"],
+      6: [500000, null]
+    };
+
+    if (harga[pilih] && score >= harga[pilih][0]) {
+      score -= harga[pilih][0];
+      scoreTxt.textContent = score.toLocaleString("id-ID");
+      suaraBeli.play();
+      if (harga[pilih][1]) addAsset(harga[pilih][1]);
+      if (pilih == "3") vn2.play(); // VN saat beli jet
+      alert("✅ Pembelian sukses!");
+    } else {
+      alert("❌ Uang kurang atau pilihan salah");
+    }
+  };
+
+  function selectChar(path, no) {
+    char.src = path;
+    document.getElementById("charSelector").style.display = "none";
+    if (no === 1) vn1.play();
+    placeCoin();
+    loop();
+  }
+</script>
+</body>
+</html>
